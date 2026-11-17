@@ -1,16 +1,452 @@
-body { padding: 0; margin: 0 }
-#unity-container { position: absolute }
-#unity-container.unity-desktop { left: 50%; top: 50%; transform: translate(-50%, -50%) }
-#unity-container.unity-mobile { position: fixed; width: 100%; height: 100% }
-#unity-canvas { background: #231F20 }
-.unity-mobile #unity-canvas { width: 100%; height: 100% }
-#unity-loading-bar { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: none }
-#unity-logo { width: 154px; height: 130px; background: url('unity-logo-dark.png') no-repeat center }
-#unity-progress-bar-empty { width: 141px; height: 18px; margin-top: 10px; margin-left: 6.5px; background: url('progress-bar-empty-dark.png') no-repeat center }
-#unity-progress-bar-full { width: 0%; height: 18px; margin-top: 10px; background: url('progress-bar-full-dark.png') no-repeat center }
-#unity-footer { position: relative }
-.unity-mobile #unity-footer { display: none }
-#unity-logo-title-footer { float:left; width: 102px; height: 38px; background: url('unity-logo-title-footer.png') no-repeat center }
-#unity-build-title { float: right; margin-right: 10px; line-height: 38px; font-family: arial; font-size: 18px }
-#unity-fullscreen-button { cursor:pointer; float: right; width: 38px; height: 38px; background: url('fullscreen-button.png') no-repeat center }
-#unity-warning { position: absolute; left: 50%; top: 5%; transform: translate(-50%); background: white; padding: 10px; display: none }
+/* Grass Munch web page: the game canvas and a loading screen in the game's own colours. */
+
+@font-face {
+  font-family: "GrassMunch";
+  src: url("GrassMunch.ttf") format("truetype");
+  font-weight: 700;
+  font-display: swap;
+}
+
+:root {
+  --night: #22324a;        /* the game's background */
+  --night-deep: #18253d;   /* board panel */
+  --night-deeper: #121d31;
+  --grass: #5fb842;
+  --grass-hi: #6fca50;
+  --grass-lip: #407f2b;
+  --tuft: #a6e77e;
+  --dirt: #c9a36e;
+  --dirt-hi: #d4b07c;
+  --dirt-lip: #a5834f;
+  --edge: #b8935f;
+  --bar: #70cb4f;
+  --ink: #16223b;
+  --text: #ffffff;
+  --muted: #9fb0c8;
+  --skin: #f2495c;
+  --skin-dark: #b52a3d;
+  --gold: #ffd23f;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--night);
+  color: var(--text);
+  font-family: "GrassMunch", "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  font-weight: 700;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  overscroll-behavior: none;
+}
+
+/* ---------- game canvas ---------- */
+
+#unity-container {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(120% 80% at 50% 40%, #283a55 0%, var(--night) 60%, #1c2a40 100%);
+}
+
+#unity-canvas {
+  display: block;
+  background: var(--night);
+  outline: none;
+  touch-action: none;
+}
+
+/* On a wide screen the portrait game sits in the middle like a phone. */
+#unity-canvas.framed {
+  border-radius: 18px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 24px 70px rgba(5, 10, 20, 0.55);
+}
+
+/* ---------- loading screen ---------- */
+
+#loader {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(90% 60% at 50% 38%, #2a3d5a 0%, rgba(34, 50, 74, 0) 70%),
+    linear-gradient(180deg, #24354f 0%, var(--night) 45%, #1d2b42 100%);
+  transition: opacity 0.55s ease, visibility 0.55s;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+#loader.gone {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loader-column {
+  --w: min(86vw, 420px, 52vh);
+  width: var(--w);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateY(-3vh);
+}
+
+#loader.gone .loader-column {
+  transform: translateY(-3vh) scale(1.04);
+  transition: transform 0.55s ease;
+}
+
+/* Title */
+
+.title {
+  margin: 0;
+  line-height: 0.86;
+  text-align: center;
+  font-size: calc(var(--w) * 0.27);
+  letter-spacing: 0.01em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.word {
+  display: block;
+  animation: pop-in 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+.word-a {
+  color: var(--text);
+  text-shadow: 0 0.06em 0 var(--night-deeper), 0 0.12em 0.25em rgba(0, 0, 0, 0.25);
+}
+
+.word-b {
+  color: var(--bar);
+  animation-delay: 0.12s;
+  text-shadow: 0 0.06em 0 var(--grass-lip), 0 0.12em 0.25em rgba(0, 0, 0, 0.3);
+}
+
+.tagline {
+  margin: calc(var(--w) * 0.05) 0 0;
+  font-size: calc(var(--w) * 0.052);
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  animation: fade-up 0.6s 0.35s ease both;
+}
+
+/* The lawn strip: grass tiles the muncher mows as the game downloads */
+
+.lawn {
+  --tiles: 7;
+  --gap: calc(var(--w) * 0.012);
+  --pad: calc(var(--w) * 0.03);
+  --tile: calc((var(--w) - 2 * var(--pad) - (var(--tiles) - 1) * var(--gap)) / var(--tiles));
+  position: relative;
+  width: var(--w);
+  margin-top: calc(var(--w) * 0.13);
+  padding: var(--pad);
+  border-radius: calc(var(--w) * 0.05);
+  background: var(--night-deep);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.03), 0 10px 30px rgba(5, 10, 20, 0.35);
+  animation: fade-up 0.6s 0.45s ease both;
+}
+
+.tiles {
+  display: flex;
+  gap: var(--gap);
+}
+
+.tile {
+  position: relative;
+  width: var(--tile);
+  height: var(--tile);
+  border-radius: calc(var(--tile) * 0.16);
+  background: linear-gradient(180deg, var(--grass-hi) 0%, var(--grass) 70%);
+  box-shadow:
+    inset 0 calc(var(--tile) * -0.1) 0 var(--grass-lip),
+    0 0 0 1.5px var(--edge);
+  transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.tile:nth-child(even) {
+  background: linear-gradient(180deg, #67c24a 0%, #58ad3d 70%);
+}
+
+.tile svg {
+  position: absolute;
+  left: 22%;
+  top: 18%;
+  width: 56%;
+  height: 56%;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.tile svg path {
+  fill: none;
+  stroke: var(--tuft);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  opacity: 0.85;
+}
+
+.tile.mowed {
+  background: linear-gradient(180deg, var(--dirt-hi) 0%, var(--dirt) 70%);
+  box-shadow:
+    inset 0 calc(var(--tile) * -0.1) 0 var(--dirt-lip),
+    0 0 0 1.5px var(--edge);
+  animation: thump 0.3s ease;
+}
+
+.tile.mowed svg {
+  transform: scale(0.2) translateY(30%);
+  opacity: 0;
+}
+
+/* Grass bits that fly off a tile as it is mowed */
+.bit {
+  position: absolute;
+  width: calc(var(--tile) * 0.12);
+  height: calc(var(--tile) * 0.12);
+  border-radius: 50%;
+  background: var(--tuft);
+  pointer-events: none;
+  animation: bit 0.7s ease-out forwards;
+}
+
+/* The muncher */
+
+.muncher {
+  position: absolute;
+  left: var(--pad);
+  bottom: calc(var(--pad) + var(--tile) * 0.16);
+  width: calc(var(--tile) * 1.1);
+  height: calc(var(--tile) * 1.1);
+  margin-left: calc(var(--tile) * -0.05);
+  transform: translateX(0);
+  will-change: transform;
+  z-index: 2;
+}
+
+.muncher-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.m-shadow { fill: rgba(5, 12, 25, 0.35); }
+.m-body { transform-origin: 50% 90%; animation: hop 0.42s ease-in-out infinite; }
+.m-skin { fill: var(--skin); stroke: var(--skin-dark); stroke-width: 5; stroke-linejoin: round; }
+.m-shine { fill: rgba(255, 255, 255, 0.35); }
+.m-eye circle:first-child { fill: #fff; }
+.m-pupil { fill: var(--ink); transition: transform 0.2s ease; }
+.m-mouth { fill: var(--ink); transform-box: fill-box; transform-origin: center; animation: chomp 0.42s ease-in-out infinite; }
+
+.muncher.blink .m-eye { transform-box: fill-box; transform-origin: center; animation: blink 0.18s ease; }
+
+.muncher.happy .m-body { animation: cheer 0.55s cubic-bezier(0.3, 1.6, 0.5, 1) infinite; }
+.muncher.happy .m-mouth { animation: none; transform: scale(1.6, 1.3); }
+
+/* Status line */
+
+.status {
+  margin-top: calc(var(--w) * 0.05);
+  width: var(--w);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: calc(var(--w) * 0.05);
+  letter-spacing: 0.03em;
+  animation: fade-up 0.6s 0.55s ease both;
+}
+
+.status-text { color: var(--text); opacity: 0.92; }
+.status-pct { color: var(--bar); font-variant-numeric: tabular-nums; }
+
+/* Tips */
+
+.tip {
+  margin: calc(var(--w) * 0.09) 0 0;
+  min-height: 2.6em;
+  max-width: var(--w);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6em;
+  font-size: calc(var(--w) * 0.044);
+  line-height: 1.3;
+  color: var(--muted);
+  animation: fade-up 0.6s 0.7s ease both;
+}
+
+.tip-label {
+  flex: none;
+  padding: 0.12em 0.45em;
+  border-radius: 0.4em;
+  background: var(--gold);
+  color: var(--ink);
+  font-size: 0.78em;
+  letter-spacing: 0.06em;
+  margin-top: 0.12em;
+}
+
+.tip-text { transition: opacity 0.35s ease, transform 0.35s ease; }
+.tip-text.out { opacity: 0; transform: translateY(0.4em); }
+
+/* Background drift: faint grass bits floating up */
+
+.drift {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.mote {
+  position: absolute;
+  bottom: -20px;
+  border-radius: 50%;
+  background: var(--tuft);
+  opacity: 0;
+  animation: rise linear infinite;
+}
+
+/* Failure */
+
+.failure {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(18, 29, 49, 0.82);
+  padding: 24px;
+}
+
+.failure[hidden] { display: none; }
+
+.failure-card {
+  width: min(86vw, 400px);
+  padding: 28px 24px 22px;
+  border-radius: 22px;
+  background: var(--night-deep);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  text-align: center;
+}
+
+.failure-title { font-size: 26px; line-height: 1.1; }
+.failure-text { color: var(--muted); font-size: 17px; line-height: 1.35; margin: 12px 0 20px; }
+
+.failure-retry {
+  font: inherit;
+  font-size: 20px;
+  color: var(--ink);
+  background: var(--bar);
+  border: none;
+  border-radius: 14px;
+  padding: 12px 34px;
+  box-shadow: inset 0 -4px 0 var(--grass-lip);
+  cursor: pointer;
+}
+
+.failure-detail {
+  margin: 16px 0 0;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-weight: 400;
+  font-size: 11px;
+  color: #6c7d96;
+  word-break: break-word;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Warnings from Unity (rare): small toasts */
+
+#toasts {
+  position: fixed;
+  left: 50%;
+  top: 16px;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(92vw, 440px);
+  pointer-events: none;
+}
+
+.toast {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(24, 37, 61, 0.95);
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.35;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  border-left: 4px solid var(--gold);
+  animation: fade-up 0.3s ease both;
+}
+
+/* ---------- animations ---------- */
+
+@keyframes pop-in {
+  0% { opacity: 0; transform: translateY(18px) scale(0.85); }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes fade-up {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes hop {
+  0%, 100% { transform: translateY(0) scale(1.04, 0.96); }
+  50% { transform: translateY(-9%) scale(0.97, 1.03); }
+}
+
+@keyframes chomp {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.5, 2.1); }
+}
+
+@keyframes cheer {
+  0%, 100% { transform: translateY(0) scale(1.06, 0.94); }
+  45% { transform: translateY(-26%) scale(0.95, 1.06); }
+}
+
+@keyframes blink {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.1); }
+}
+
+@keyframes thump {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+@keyframes bit {
+  0% { opacity: 1; transform: translate(0, 0) scale(1); }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.4); }
+}
+
+@keyframes rise {
+  0% { opacity: 0; transform: translateY(0); }
+  15% { opacity: var(--o); }
+  85% { opacity: var(--o); }
+  100% { opacity: 0; transform: translateY(-110vh); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m-body, .m-mouth, .mote, .word, .tagline, .lawn, .status, .tip { animation: none !important; }
+}

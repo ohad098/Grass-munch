@@ -2,126 +2,95 @@
 <html lang="en-us">
   <head>
     <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Unity Web Player | Grass Munch</title>
-    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#22324a">
+    <title>Grass Munch</title>
+    <link rel="icon" type="image/png" href="TemplateData/favicon.png">
+    <link rel="apple-touch-icon" href="TemplateData/apple-touch-icon.png">
+    <link rel="preload" href="TemplateData/GrassMunch.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="stylesheet" href="TemplateData/style.css">
   </head>
   <body>
-    <div id="unity-container" class="unity-desktop">
+    <div id="unity-container">
       <canvas id="unity-canvas" width=540 height=960 tabindex="-1"></canvas>
-      <div id="unity-loading-bar">
-        <div id="unity-logo"></div>
-        <div id="unity-progress-bar-empty">
-          <div id="unity-progress-bar-full"></div>
+    </div>
+
+    <!-- The loading screen. Plain HTML/CSS, so it shows the moment the page opens. -->
+    <div id="loader" role="progressbar" aria-label="Loading Grass Munch" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div class="drift" aria-hidden="true"></div>
+      <div class="loader-column">
+        <h1 class="title" aria-label="Grass Munch">
+          <span class="word word-a">GRASS</span>
+          <span class="word word-b">MUNCH</span>
+        </h1>
+        <p class="tagline">Swap the munchers. Clear the lawn.</p>
+
+        <div class="lawn" aria-hidden="true">
+          <div class="tiles"></div>
+          <div class="muncher">
+            <svg viewBox="0 0 100 100" class="muncher-svg">
+              <ellipse class="m-shadow" cx="50" cy="95" rx="34" ry="5"/>
+              <g class="m-body">
+                <path class="m-skin" d="M50 12 C80 12 90 22 90 52 C90 82 80 90 50 90 C20 90 10 82 10 52 C10 22 20 12 50 12 Z"/>
+                <path class="m-shine" d="M28 26 C34 20 44 19 50 19 C40 22 33 27 29 36 Z"/>
+                <g class="m-eye m-eye-l"><circle cx="35" cy="43" r="13"/><circle class="m-pupil" cx="38" cy="45" r="6"/></g>
+                <g class="m-eye m-eye-r"><circle cx="65" cy="43" r="13"/><circle class="m-pupil" cx="68" cy="45" r="6"/></g>
+                <ellipse class="m-mouth" cx="52" cy="66" rx="6" ry="4"/>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <div class="status">
+          <span class="status-text">Mowing the lawn…</span>
+          <span class="status-pct">0%</span>
+        </div>
+        <p class="tip"><span class="tip-label">TIP</span><span class="tip-text"></span></p>
+      </div>
+
+      <div class="failure" hidden>
+        <div class="failure-card">
+          <div class="failure-title">The munchers got lost on the way</div>
+          <p class="failure-text">The game couldn't load. Check your connection and try again.</p>
+          <button type="button" class="failure-retry" onclick="location.reload()">Try again</button>
+          <p class="failure-detail"></p>
         </div>
       </div>
-      <div id="unity-warning"> </div>
-      <div id="unity-footer">
-        <div id="unity-logo-title-footer"></div>
-        <div id="unity-fullscreen-button"></div>
-        <div id="unity-build-title">Grass Munch</div>
-      </div>
     </div>
+
+    <div id="toasts" aria-live="polite"></div>
+
+    <script src="TemplateData/loader-screen.js"></script>
     <script>
       var canvas = document.querySelector("#unity-canvas");
 
-      // Shows a temporary message banner/ribbon for a few seconds, or
-      // a permanent error message on top of the canvas if type=='error'.
-      // If type=='warning', a yellow highlight color is used.
-      // Modify or remove this function to customize the visually presented
-      // way that non-critical warnings and error messages are presented to the
-      // user.
-      function unityShowBanner(msg, type) {
-        var warningBanner = document.querySelector("#unity-warning");
-        function updateBannerVisibility() {
-          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
-        }
-        var div = document.createElement('div');
-        div.innerHTML = msg;
-        warningBanner.appendChild(div);
-        if (type == 'error') div.style = 'background: red; padding: 10px;';
-        else {
-          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
-          setTimeout(function() {
-            warningBanner.removeChild(div);
-            updateBannerVisibility();
-          }, 5000);
-        }
-        updateBannerVisibility();
-      }
-
       var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/0c53aa7edc6abe4a7b845def0f922dac.loader.js";
+      var loaderUrl = buildUrl + "/4a8299550b1720a7c399340f6a429805.loader.js";
       var config = {
         arguments: [],
-        dataUrl: buildUrl + "/04f6680b2060158244f4389dff10d87f.data.unityweb",
-        frameworkUrl: buildUrl + "/0b0be1a39fc49f9a08a19dc51087ca64.framework.js.unityweb",
-        codeUrl: buildUrl + "/d5f872c23c7d86c1a98afa18502ed7ce.wasm.unityweb",
+        dataUrl: buildUrl + "/717e344630bc514b982d4ec70ef932df.data.unityweb",
+        frameworkUrl: buildUrl + "/da59b7e1a4794657d9ede3be9ed15372.framework.js.unityweb",
+        codeUrl: buildUrl + "/aa007264517a2d1469586352e53075c8.wasm.unityweb",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "DefaultCompany",
         productName: "Grass Munch",
         productVersion: "1.0",
-        showBanner: unityShowBanner,
+        showBanner: LoaderScreen.banner,
       };
 
-      // By default, Unity keeps WebGL canvas render target size matched with
-      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
-      // Set this to false if you want to decouple this synchronization from
-      // happening inside the engine, and you would instead like to size up
-      // the canvas DOM size and WebGL render target sizes yourself.
-      // config.matchWebGLToCanvasSize = false;
-
-      // If you would like all file writes inside Unity Application.persistentDataPath
-      // directory to automatically persist so that the contents are remembered when
-      // the user revisits the site the next time, uncomment the following line:
-      // config.autoSyncPersistentDataPath = true;
-      // This autosyncing is currently not the default behavior to avoid regressing
-      // existing user projects that might rely on the earlier manual
-      // JS_FileSystem_Sync() behavior, but in future Unity version, this will be
-      // expected to change.
-
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        // Mobile device style: fill the whole browser client area with the game canvas:
-
-        var meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-        document.getElementsByTagName('head')[0].appendChild(meta);
-        document.querySelector("#unity-container").className = "unity-mobile";
-        canvas.className = "unity-mobile";
-
-        // To lower canvas resolution on mobile devices to gain some
-        // performance, uncomment the following line:
-        // config.devicePixelRatio = 1;
-
-
-      } else {
-        // Desktop style: Render the game canvas in a window that can be maximized to fullscreen:
-        canvas.style.width = "540px";
-        canvas.style.height = "960px";
-      }
-
-      document.querySelector("#unity-loading-bar").style.display = "block";
+      LoaderScreen.fitCanvas(canvas, 540, 960);
 
       var script = document.createElement("script");
       script.src = loaderUrl;
-      script.onload = () => {
-        createUnityInstance(canvas, config, (progress) => {
-          document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
-              }).then((unityInstance) => {
-                document.querySelector("#unity-loading-bar").style.display = "none";
-                document.querySelector("#unity-fullscreen-button").onclick = () => {
-                  unityInstance.SetFullscreen(1);
-                };
-
-              }).catch((message) => {
-                alert(message);
-              });
-            };
-
+      script.onerror = function () { LoaderScreen.fail("The game files could not be downloaded."); };
+      script.onload = function () {
+        createUnityInstance(canvas, config, LoaderScreen.progress).then(function (unityInstance) {
+          LoaderScreen.done();
+        }).catch(function (message) {
+          LoaderScreen.fail(message);
+        });
+      };
       document.body.appendChild(script);
-
     </script>
   </body>
 </html>
